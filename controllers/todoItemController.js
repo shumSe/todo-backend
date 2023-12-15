@@ -8,47 +8,50 @@ const Tag = db.tags
 const Item_Tag = db.item_tag
 
 const addTodoItem = async (req,res) => {
-
-    let info = {
-        title: req.body.title,
-        description: req.body.description,
-        isCompleted: req.body.isCompleted ? req.body.isCompleted : false,
-    }
-
-    let tags = req.body.tags ? req.body.tags : null
-    console.log('tags ', {tags})
-
-    console.log('add ', {info})
-
-    const todoItem = await TodoItem.create(info)
-    if(tags){
-    for(const tagName of tags){
-            console.log('tagName ', {tagName})
-        
-            let tagTitle = tagName['tagTitle']
-            tagName['usage'] = 0
-            let tagItem = await Tag.findOne({where: { tagTitle: tagTitle }})
-            if(!tagItem){
-                tagItem = await Tag.create(tagName)
-                console.log('new tagTitle ')
-            }
-            console.log('old tagTitle ')
-            tagItem.usage += 1
-            await tagItem.save()
-            await todoItem.addTag(tagItem)
+    try {
+        let info = {
+            title: req.body.title,
+            description: req.body.description,
+            isCompleted: req.body.isCompleted ? req.body.isCompleted : false,
         }
+
+        let tags = req.body.tags ? req.body.tags : null
+        console.log('tags ', {tags})
+
+        console.log('add ', {info})
+
+        const todoItem = await TodoItem.create(info)
+        if(tags){
+        for(const tagName of tags){
+                console.log('tagName ', {tagName})
+            
+                let tagTitle = tagName['tagTitle']
+                tagName['usage'] = 0
+                let tagItem = await Tag.findOne({where: { tagTitle: tagTitle }})
+                if(!tagItem){
+                    tagItem = await Tag.create(tagName)
+                    console.log('new tagTitle ')
+                }
+                console.log('old tagTitle ')
+                tagItem.usage += 1
+                await tagItem.save()
+                await todoItem.addTag(tagItem)
+            }
+        }
+        const result = await TodoItem.findOne({
+            where: { id: todoItem.id },
+            include: Tag
+        });
+
+        res.status(200).send(result)
+    } catch (error){
+        console.log(error)
+        res.status(500).json({ error: 'Server error' + error });
     }
-    const result = await TodoItem.findOne({
-        where: { id: todoItem.id },
-        include: Tag
-      });
-
-    res.status(200).send(result)
-
 } 
 
 const getAllTodoItems = async (req, res) => {
-
+    try{
     let items = await TodoItem.findAll({
         attributes: ['id', 'title', 'description', 'isCompleted'],
         include:{ 
@@ -63,10 +66,14 @@ const getAllTodoItems = async (req, res) => {
     console.log('all')
 
     res.status(200).send(items)
+    } catch(error){
+        console.log(error)
+        res.status(500).json({ error: 'Server error' + error });
+    }
 }
 
 const getOneTodoItem = async (req, res) => {
-
+    try{
     let id = req.params.id
     let item = await TodoItem.findOne({
         where: { id: id }, 
@@ -84,11 +91,15 @@ const getOneTodoItem = async (req, res) => {
         },
     })
     res.status(200).send(item)
+    } catch (error){
+        console.log(error)
+        res.status(500).json({ error: 'Server error' + error });
+    } 
 }
 
 
 const updateTodoItem = async (req, res) => {
-
+    try{
     let id = req.params.id
     
     const todoItem = await TodoItem.update(req.body, {where: { id: id }})
@@ -97,31 +108,6 @@ const updateTodoItem = async (req, res) => {
         where: { id : id},
         include: Tag
     })
-
-    // const nado = await Item_Tag.findAll({
-    //     where: {todoitemId : id}
-    // })
-
-    // console.log(todoItem)
-
-
-    // const oldTags = await item.getTags({joinTableAttributes: ['tagTitle']})
-
-
-    // const oldTags = await item.getTags()
-    // console.log(oldTags)
-    // const newTags = req.body.tags ? req.body.tags : []
-    
-    // const deletedTags = oldTags.filter(item => !newTags.includes(item.tagTitle))
-    // const addedTags = newTags.filter(item => !oldTags.includes(item))
-
-
-    // console.log("DELETED")
-    // console.log(deletedTags)
-    // console.log("----------------------------------------------")
-    // console.log("ADDED")
-    // console.log(addedTags)
-
 
     const oldTags = await item.getTags()
     for(const oldtag of oldTags){
@@ -169,22 +155,35 @@ const updateTodoItem = async (req, res) => {
     }})
 
     res.status(200).send(result)
+    } catch (error){
+        console.log(error)
+        res.status(500).json({ error: 'Server error' + error });
+    }
 }
 
 const deleteTodoItem = async (req, res) => {
-
+    try{
     let id = req.params.id
     await deleteById(id)
 
     res.status(200).send('Product is deleted')
+    } catch (error){
+        console.log(error)
+        res.status(500).json({ error: 'Server error' + error });
+    }
 }
 
 const deleteListItems = async (req, res) => {
+    try{
     for(const id of req.body.ids){
         await deleteById(id)
     }
 
     res.status(200).send('Products is deleted')
+    } catch (error){
+        console.log(error)
+        res.status(500).json({ error: 'Server error' + error });
+    }   
 }
 
 const deleteById = async(id) => {

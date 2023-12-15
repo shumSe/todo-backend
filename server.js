@@ -10,7 +10,6 @@ var corOptions = {
 console.log(`cors ${corOptions.origin}`)
 
 const db = require('./models')
-const TodoItem = db.todoitems
 
 // middleware
 
